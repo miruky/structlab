@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 250" role="img" aria-label="structlabのアーキテクチャ図">
+  <title>structlabのアーキテクチャ</title>
+  <style>
+    .box { fill: none; stroke: #8b949e; stroke-width: 1.5; }
+    .accent-box { fill: none; stroke: #2ea893; stroke-width: 1.5; }
+    .label { font: 600 14px 'Hiragino Sans', 'Noto Sans JP', sans-serif; fill: #6b7280; }
+    .small { font: 400 11.5px 'Hiragino Sans', 'Noto Sans JP', sans-serif; fill: #6b7280; }
+    .accent-label { font: 700 14px 'Hiragino Sans', 'Noto Sans JP', sans-serif; fill: #178f7d; }
+    .arrow { stroke: #8b949e; stroke-width: 1.5; fill: none; marker-end: url(#head); }
+  </style>
+  <defs>
+    <marker id="head" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0L8 4L0 8z" fill="#8b949e"/>
+    </marker>
+  </defs>
+
+  <rect x="20" y="20" width="180" height="64" rx="8" class="accent-box"/>
+  <text x="40" y="46" class="accent-label">btree.ts</text>
+  <text x="40" y="68" class="small">分割 / 借用 / 統合 / 縮退</text>
+
+  <rect x="20" y="166" width="180" height="64" rx="8" class="accent-box"/>
+  <text x="40" y="192" class="accent-label">hashtable.ts</text>
+  <text x="40" y="214" class="small">チェイン法 / 線形走査 / 墓石</text>
+
+  <rect x="270" y="90" width="180" height="70" rx="8" class="box"/>
+  <text x="290" y="118" class="label">イベント列</text>
+  <text x="290" y="140" class="small">visit / split / probe / rehash...</text>
+
+  <rect x="530" y="90" width="170" height="70" rx="8" class="accent-box"/>
+  <text x="550" y="118" class="accent-label">app.ts</text>
+  <text x="550" y="140" class="small">逐次ハイライト + FLIP移動</text>
+
+  <rect x="760" y="90" width="120" height="70" rx="8" class="box"/>
+  <text x="780" y="118" class="label">SVG描画</text>
+  <text x="780" y="140" class="small">木 / バケット</text>
+
+  <rect x="530" y="20" width="170" height="44" rx="8" class="box"/>
+  <text x="550" y="47" class="label">treelayout.ts</text>
+
+  <path class="arrow" d="M200 52 C240 60 250 85 262 100"/>
+  <path class="arrow" d="M200 198 C240 190 250 165 262 150"/>
+  <path class="arrow" d="M450 125 H522"/>
+  <path class="arrow" d="M700 125 H752"/>
+  <path class="arrow" d="M615 64 V82"/>
+</svg>
