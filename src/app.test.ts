@@ -125,4 +125,49 @@ describe('ハッシュテーブルパネル', () => {
     expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(panel.querySelector('.stats')?.textContent).toContain('要素数 5');
   });
+
+  it('二次走査法へ切り替えてもキー集合を保つ', () => {
+    const select = panel.querySelector('select') as HTMLSelectElement;
+    select.value = 'quadratic';
+    select.dispatchEvent(new Event('change'));
+    expect(panel.querySelector('.stats')?.textContent).toContain('要素数 5');
+    expect(panel.querySelectorAll('g.hb-cell[data-slot]').length).toBeGreaterThan(0);
+    expect(panel.querySelector('.log-list')?.textContent).toContain('二次走査法');
+  });
+});
+
+describe('ツールと凡例', () => {
+  beforeEach(() => {
+    location.hash = '';
+    // 保存値の有無に左右されないよう、可能なら設定を消してから始める
+    try {
+      localStorage.removeItem('structlab:theme');
+      localStorage.removeItem('structlab:speed');
+    } catch {
+      /* localStorage非対応の環境では既定値で進む */
+    }
+  });
+
+  it('ハイライトの凡例が両パネルに表示される', () => {
+    const root = mount();
+    expect(panelOf(root, 'panel-btree').querySelector('.legend')).not.toBeNull();
+    expect(panelOf(root, 'panel-hash').querySelector('.legend')).not.toBeNull();
+  });
+
+  it('テーマトグルは自動→ライト→ダークと巡回し、html要素へ反映する', () => {
+    const root = mount();
+    const toggle = root.querySelector('#theme-toggle') as HTMLButtonElement;
+    expect(toggle.dataset.choice).toBe('system');
+    toggle.click();
+    expect(toggle.dataset.choice).toBe('light');
+    expect(document.documentElement.dataset.theme).toBe('light');
+    toggle.click();
+    expect(toggle.dataset.choice).toBe('dark');
+    expect(document.documentElement.dataset.theme).toBe('dark');
+  });
+
+  it('再生速度の選択肢が3段階そろう', () => {
+    const speed = mount().querySelector('#speed-select') as HTMLSelectElement;
+    expect(speed.querySelectorAll('option').length).toBe(3);
+  });
 });
