@@ -9,6 +9,19 @@
     />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <title>structlab — データ構造プレイグラウンド</title>
+    <script>
+      // 描画前にテーマを解決し、ちらつき(FOUC)を防ぐ。app.tsと同じ規則。
+      (function () {
+        try {
+          var c = localStorage.getItem('structlab:theme') || 'system';
+          var dark =
+            c === 'dark' || (c === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        } catch (e) {
+          /* ストレージ・matchMedia不可でもCSSの既定で表示する */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>
