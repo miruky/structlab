@@ -1,8 +1,27 @@
 import { BTree, type BTreeEvent } from './lib/btree';
 import { HashTable, type HashEvent, type HashStrategy } from './lib/hashtable';
 import { layoutTree, DEFAULT_LAYOUT } from './lib/treelayout';
+import {
+  THEME_STORAGE_KEY,
+  choiceLabel,
+  nextChoice,
+  parseChoice,
+  resolveTheme,
+  type ThemeChoice,
+} from './lib/theme';
+import {
+  SPEEDS,
+  SPEED_LABELS,
+  SPEED_STORAGE_KEY,
+  intervalFor,
+  parseSpeed,
+  type Speed,
+} from './lib/settings';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+
+// 再生間隔は速度設定で動かす。両ビューが同じ値を参照する。
+let currentInterval = intervalFor('normal');
 
 function svgEl<K extends keyof SVGElementTagNameMap>(
   tag: K,
@@ -86,7 +105,6 @@ class OperationLog {
   }
 }
 
-const STEP_INTERVAL = 260;
 const PADDING = 14;
 
 function describeBTreeEvent(event: BTreeEvent): string {
@@ -411,7 +429,7 @@ class BTreeView {
         }
       });
     }
-    this.sequencer.play(steps, STEP_INTERVAL);
+    this.sequencer.play(steps, currentInterval);
   }
 }
 
@@ -829,7 +847,7 @@ class HashView {
         }
       });
     }
-    this.sequencer.play(steps, STEP_INTERVAL);
+    this.sequencer.play(steps, currentInterval);
   }
 
   private showReadout(event: { key: string; hash: number; index: number }): void {
@@ -849,14 +867,84 @@ const LOGO = `
 </svg>
 `;
 
+const THEME_ICON =
+  '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 3.5a8.5 8.5 0 0 0 0 17z" fill="currentColor"/></svg>';
+
+/** テーマ(自動 / ライト / ダーク)の切替。選択は localStorage に残し、自動時はOSに追従。 */
+function setupTheme(root: HTMLElement): void {
+  const btn = root.querySelector('#theme-toggle') as HTMLButtonElement | null;
+  const labelEl = root.querySelector('#theme-label') as HTMLElement | null;
+  if (!btn || !labelEl) return;
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+  let choice: ThemeChoice = parseChoice(safeRead(THEME_STORAGE_KEY));
+  const apply = (): void => {
+    document.documentElement.dataset.theme = resolveTheme(choice, media.matches);
+    labelEl.textContent = choiceLabel(choice);
+    btn.dataset.choice = choice;
+    btn.setAttribute('aria-label', `テーマ: ${choiceLabel(choice)}。クリックで切り替え`);
+  };
+  btn.addEventListener('click', () => {
+    choice = nextChoice(choice);
+    safeWrite(THEME_STORAGE_KEY, choice);
+    apply();
+  });
+  media.addEventListener('change', () => {
+    if (choice === 'system') apply();
+  });
+  apply();
+}
+
+/** 再生速度の選択。両ビューが参照する currentInterval を更新し、選択を保存する。 */
+function setupSpeed(root: HTMLElement): void {
+  const select = root.querySelector('#speed-select') as HTMLSelectElement | null;
+  if (!select) return;
+  const speed: Speed = parseSpeed(safeRead(SPEED_STORAGE_KEY));
+  select.value = speed;
+  currentInterval = intervalFor(speed);
+  select.addEventListener('change', () => {
+    const next = parseSpeed(select.value);
+    currentInterval = intervalFor(next);
+    safeWrite(SPEED_STORAGE_KEY, next);
+  });
+}
+
+function safeRead(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeWrite(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* ストレージ不可でもUIは動かす */
+  }
+}
+
 export function mountApp(root: HTMLElement): void {
   root.innerHTML = `
     <div class="shell">
       <header class="masthead">
-        ${LOGO}
-        <div>
-          <h1>structlab</h1>
-          <p>B木とハッシュテーブルの内部をキーの出し入れで観察するプレイグラウンド</p>
+        <div class="masthead-main">
+          ${LOGO}
+          <div class="masthead-text">
+            <p class="kicker">Data Structure Playground</p>
+            <h1>structlab</h1>
+            <p class="lede">B木とハッシュテーブルの内部を、キーの出し入れで観察するプレイグラウンド</p>
+          </div>
+        </div>
+        <div class="toolbar">
+          <label class="field speed-control">速度
+            <select id="speed-select" aria-label="再生速度">
+              ${SPEEDS.map((s) => `<option value="${s}">${SPEED_LABELS[s]}</option>`).join('')}
+            </select>
+          </label>
+          <button type="button" id="theme-toggle" class="theme-toggle">
+            ${THEME_ICON}<span id="theme-label" class="theme-label">自動</span>
+          </button>
         </div>
       </header>
       <nav class="tabs" role="tablist" aria-label="データ構造の選択">
@@ -872,6 +960,9 @@ export function mountApp(root: HTMLElement): void {
       </footer>
     </div>
   `;
+
+  setupTheme(root);
+  setupSpeed(root);
 
   const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
   const panels = [...root.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
