@@ -38,6 +38,16 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+// ハイライトの色語彙はB木・ハッシュで共通。各ビューの下に凡例を添える。
+const LEGEND = `
+  <ul class="legend" aria-label="ハイライトの凡例">
+    <li><span class="sw sw-visit"></span>通過・走査</li>
+    <li><span class="sw sw-new"></span>新規</li>
+    <li><span class="sw sw-found"></span>発見</li>
+    <li><span class="sw sw-warn"></span>衝突・重複</li>
+    <li><span class="sw sw-change"></span>変化</li>
+  </ul>`;
+
 // イベント列を一定間隔で再生する。新しい操作が始まったら前の再生を打ち切る。
 class Sequencer {
   private timers: number[] = [];
@@ -172,6 +182,7 @@ class BTreeView {
           </div>
           <p class="stats" aria-live="polite"></p>
           <div class="canvas" tabindex="0" role="img" aria-label="B木の構造図"></div>
+          ${LEGEND}
         </section>
         <aside class="log-card">
           <h3>操作ログ</h3>
@@ -433,6 +444,12 @@ class BTreeView {
   }
 }
 
+const STRATEGY_LABELS: Record<HashStrategy, string> = {
+  chaining: 'チェイン法',
+  linear: '線形走査法',
+  quadratic: '二次走査法',
+};
+
 const WORD_POOL = [
   'sakura',
   'kaede',
@@ -530,6 +547,7 @@ class HashView {
               <select aria-label="衝突の解決方式">
                 <option value="chaining" selected>チェイン法</option>
                 <option value="linear">線形走査法</option>
+                <option value="quadratic">二次走査法</option>
               </select>
             </label>
           </div>
@@ -540,6 +558,7 @@ class HashView {
           </div>
           <p class="readout" aria-live="polite"></p>
           <div class="canvas" tabindex="0" role="img" aria-label="ハッシュテーブルの内部状態図"></div>
+          ${LEGEND}
         </section>
         <aside class="log-card">
           <h3>操作ログ</h3>
@@ -645,7 +664,7 @@ class HashView {
     for (const key of this.insertionOrder) this.table.insert(key);
     this.readout.textContent = '';
     this.render();
-    const label = strategy === 'chaining' ? 'チェイン法' : '線形走査法';
+    const label = STRATEGY_LABELS[strategy];
     this.log.add(`方式を${label}に変更`, [
       `${this.insertionOrder.length} 個のキーを同じ順序で挿入し直した`,
     ]);
@@ -663,7 +682,7 @@ class HashView {
         : `墓石 ${this.table.tombstoneCount} / 最長クラスタ ${this.table.longestCluster()}`;
     this.stats.textContent = `要素数 ${this.table.size} / 容量 ${this.table.capacity} / ${tail}`;
     const load = this.table.loadFactor;
-    const limit = this.table.strategy === 'chaining' ? 0.75 : 0.6;
+    const limit = this.table.loadLimit;
     this.loadFill.style.width = `${Math.min(100, (load / limit) * 100)}%`;
     this.loadFill.classList.toggle('load-high', load > limit * 0.8);
     this.loadLabel.textContent = `負荷率 ${load.toFixed(2)}(上限 ${limit})`;
