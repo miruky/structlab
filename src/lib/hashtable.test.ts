@@ -25,7 +25,7 @@ describe('fnv1a', () => {
   });
 });
 
-describe.each(['chaining', 'linear'] as const)('HashTable (%s)', (strategy) => {
+describe.each(['chaining', 'linear', 'quadratic'] as const)('HashTable (%s)', (strategy) => {
   it('挿入したキーが見つかり、無いキーは見つからない', () => {
     const table = new HashTable(strategy);
     table.insert('sakura');
@@ -162,6 +162,38 @@ describe('HashTable 線形走査固有の挙動', () => {
     expect(table.longestCluster()).toBe(0);
     table.insert('one');
     expect(table.longestCluster()).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('HashTable 二次走査固有の挙動', () => {
+  // 同じ初期indexへ集まるキー列を、実際のハッシュ値から探して用意する
+  function clusterAt(prefix: string, count: number, capacity: number): string[] {
+    const target = fnv1a(`${prefix}-0`) % capacity;
+    const cluster: string[] = [];
+    for (let i = 0; cluster.length < count && i < 20000; i++) {
+      const key = `${prefix}-${i}`;
+      if (fnv1a(key) % capacity === target) cluster.push(key);
+    }
+    return cluster;
+  }
+
+  it('初期indexが衝突するキーでも三角数の歩幅で散らして全て格納できる', () => {
+    const table = new HashTable('quadratic');
+    const cluster = clusterAt('q', 4, table.capacity);
+    expect(cluster.length).toBe(4);
+    for (const key of cluster) table.insert(key);
+    for (const key of cluster) expect(table.has(key)).toBe(true);
+    expect(table.size).toBe(4);
+  });
+
+  it('削除は墓石を残し、衝突したキーの走査を保つ', () => {
+    const table = new HashTable('quadratic');
+    const cluster = clusterAt('p', 3, table.capacity);
+    expect(cluster.length).toBe(3);
+    for (const key of cluster) table.insert(key);
+    table.remove(cluster[1] as string);
+    expect(table.tombstoneCount).toBe(1);
+    expect(table.has(cluster[2] as string)).toBe(true);
   });
 });
 
