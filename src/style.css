@@ -1,32 +1,33 @@
 :root {
   color-scheme: light dark;
-  --bg: #f5f6f7;
-  --surface: #ffffff;
-  --text: #1f262b;
-  --muted: #5d6b73;
-  --border: #dde3e6;
-  --accent: #178f7d;
-  --accent-soft: rgba(23, 143, 125, 0.14);
-  --warn: #b06f15;
-  --change: #8a4f9e;
+  /* 温度のある中立色。純白/純黒を避け、地に少し黄を含ませる */
+  --bg: #f3f2ee;
+  --surface: #fbfaf7;
+  --text: #23282a;
+  --muted: #69716e;
+  --border: #e4e2db;
+  --hairline: #ece9e2;
+  --accent: #14887a;
+  --accent-soft: rgba(20, 136, 122, 0.12);
+  --warn: #a96c18;
+  --change: #855094;
   --found: #2e7d4f;
-  --shadow: 0 1px 2px rgba(18, 26, 30, 0.05), 0 4px 16px rgba(18, 26, 30, 0.06);
   --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #14181b;
-    --surface: #1c2226;
-    --text: #e4e9eb;
-    --muted: #95a4ad;
-    --border: #2c353b;
+    --bg: #15181a;
+    --surface: #1b2023;
+    --text: #e5e8e8;
+    --muted: #98a3a6;
+    --border: #2b3236;
+    --hairline: #242a2d;
     --accent: #4ed3bd;
     --accent-soft: rgba(78, 211, 189, 0.16);
     --warn: #d6a35e;
     --change: #c08fd4;
     --found: #5cc488;
-    --shadow: none;
   }
 }
 
@@ -46,14 +47,14 @@ body {
 .shell {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 32px 24px 48px;
+  padding: 48px 24px 64px;
 }
 
 .masthead {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 .brand-logo {
@@ -82,13 +83,15 @@ body {
 }
 
 .masthead h1 {
-  font-size: 1.5rem;
-  letter-spacing: 0.02em;
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .masthead p {
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
+  margin-top: 2px;
 }
 
 .tabs {
@@ -148,9 +151,8 @@ body {
 .log-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  padding: 16px;
+  border-radius: 10px;
+  padding: 20px;
 }
 
 .controls {
@@ -298,7 +300,7 @@ button.primary {
 .canvas {
   overflow: auto;
   max-height: 560px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--hairline);
   border-radius: 10px;
   padding: 16px;
   background: var(--bg);
@@ -503,7 +505,7 @@ button.primary {
 }
 
 .log-entry {
-  border: 1px solid var(--border);
+  border: 1px solid var(--hairline);
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 0.8125rem;
