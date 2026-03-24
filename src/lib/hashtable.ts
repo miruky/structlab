@@ -1,7 +1,7 @@
 // ハッシュ表(キーの集合)。チェイン法と線形走査法の2方式を同じイベント語彙で
 // 表現し、衝突・墓石・再ハッシュといった内部の動きを描画側へ伝える。
 
-export type HashStrategy = 'chaining' | 'linear';
+export type HashStrategy = 'chaining' | 'linear' | 'quadratic';
 
 export type SlotState =
   | { state: 'empty' }
@@ -21,8 +21,13 @@ export type HashEvent =
   | { type: 'rehash'; oldCapacity: number; newCapacity: number; movedKeys: number };
 
 const INITIAL_CAPACITY = 8;
-// 線形走査は墓石も走査を伸ばすため、チェイン法より低い負荷率で広げる
-const LOAD_FACTOR_LIMIT: Record<HashStrategy, number> = { chaining: 0.75, linear: 0.6 };
+// 開番地法(線形・二次)は墓石も走査を伸ばすため、チェイン法より低い負荷率で広げる。
+// 二次走査は0.5を超えると空きを見つけにくくなるため、さらに低く保つ。
+const LOAD_FACTOR_LIMIT: Record<HashStrategy, number> = {
+  chaining: 0.75,
+  linear: 0.6,
+  quadratic: 0.5,
+};
 
 const utf8 = new TextEncoder();
 
@@ -72,9 +77,21 @@ export class HashTable {
     return (this.keyCount + this.tombstoneCount) / this.capacity;
   }
 
+  // 再ハッシュの閾値。方式ごとに異なる(描画の負荷メーターと揃えるため公開)
+  get loadLimit(): number {
+    return LOAD_FACTOR_LIMIT[this.strategy];
+  }
+
   private indexOf(key: string): { hash: number; index: number } {
     const hash = fnv1a(key);
     return { hash, index: hash % this.capacity };
+  }
+
+  // 開番地法のstep番目の探索位置。線形は +step、二次は三角数 +step(step+1)/2。
+  // 容量は常に2の冪なので、二次でも三角数列が全スロットを巡り必ず空きに行き着く。
+  private probe(start: number, step: number): number {
+    const offset = this.strategy === 'quadratic' ? (step * (step + 1)) / 2 : step;
+    return (start + offset) % this.capacity;
   }
 
   insert(key: string): HashEvent[] {
@@ -84,7 +101,7 @@ export class HashTable {
     if (this.strategy === 'chaining') {
       this.insertChaining(key, index, events);
     } else {
-      this.insertLinear(key, index, events);
+      this.insertOpen(key, index, events);
     }
     if (this.loadFactor > LOAD_FACTOR_LIMIT[this.strategy]) {
       this.rehash(this.capacity * 2, events);
@@ -106,10 +123,10 @@ export class HashTable {
     events.push({ type: 'place', index, key });
   }
 
-  private insertLinear(key: string, start: number, events: HashEvent[]): void {
+  private insertOpen(key: string, start: number, events: HashEvent[]): void {
     let firstTombstone = -1;
     for (let step = 0; step < this.capacity; step++) {
-      const index = (start + step) % this.capacity;
+      const index = this.probe(start, step);
       const slot = this.slots[index];
       if (slot === null || slot === undefined) {
         events.push({ type: 'probe', index, occupiedBy: null });
@@ -151,7 +168,7 @@ export class HashTable {
       return events;
     }
     for (let step = 0; step < this.capacity; step++) {
-      const probeIndex = (index + step) % this.capacity;
+      const probeIndex = this.probe(index, step);
       const slot = this.slots[probeIndex];
       if (slot === null || slot === undefined) {
         events.push({ type: 'probe', index: probeIndex, occupiedBy: null });
@@ -192,7 +209,7 @@ export class HashTable {
       return events;
     }
     for (let step = 0; step < this.capacity; step++) {
-      const probeIndex = (index + step) % this.capacity;
+      const probeIndex = this.probe(index, step);
       const slot = this.slots[probeIndex];
       if (slot === null || slot === undefined) break;
       if (slot === key) {
@@ -222,8 +239,12 @@ export class HashTable {
       if (this.strategy === 'chaining') {
         (this.chains[index] as string[]).push(key);
       } else {
-        let probeIndex = index;
-        while (this.slots[probeIndex] !== null) probeIndex = (probeIndex + 1) % newCapacity;
+        let step = 0;
+        let probeIndex = this.probe(index, 0);
+        while (this.slots[probeIndex] !== null) {
+          step += 1;
+          probeIndex = this.probe(index, step);
+        }
         this.slots[probeIndex] = key;
       }
     }
