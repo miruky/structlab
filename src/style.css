@@ -397,6 +397,53 @@ button.primary {
   max-width: none;
 }
 
+/* ハイライトの凡例: 小さな色見本で語彙を示す */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  list-style: none;
+  margin-top: 14px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sw {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1.5px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sw-visit {
+  border-color: var(--accent);
+}
+
+.sw-new {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.sw-found {
+  border-color: var(--found);
+}
+
+.sw-warn {
+  border-color: var(--warn);
+  background: rgba(176, 111, 21, 0.15);
+}
+
+.sw-change {
+  border-color: var(--change);
+}
+
 /* B木 */
 
 .bt-edge {
